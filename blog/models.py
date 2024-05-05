@@ -26,12 +26,11 @@ class Post(models.Model):
         default=Status.DRAFT
     )
 
+    class Meta:
+        ordering = ['-publish']
+        indexes = [
+            models.Index(fields=['-publish']),
+        ]
 
-class Meta:
-    ordering = ['-publish']
-    indexes = [
-        models.Index(fields=['-publish']),
-    ]
-
-def __str__(self):
+    def __str__(self):
         return self.title
