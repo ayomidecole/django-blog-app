@@ -12,3 +12,5 @@ The request/response cycle (update at the end)
 4. Django sends the response back to the user with the html template 
 
 Extending Functionality
+1. Added pagination
+2. Added email form functionality
