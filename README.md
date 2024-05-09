@@ -13,4 +13,5 @@ The request/response cycle (update at the end)
 
 Extending Functionality
 1. Added pagination
-2. Added email form functionality
+2. Added email share form functionality
+3. 
