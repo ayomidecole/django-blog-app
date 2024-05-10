@@ -1,7 +1,13 @@
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.core.paginator import EmptyPage, Paginator, PageNotAnInteger
 from django.shortcuts import get_object_or_404, render
+from django.views.decorators.http import require_POST
 from .models import Post
 from django.views.generic import ListView
+from .forms import EmailPostForm, CommentForm
+from django.core.mail import send_mail
+from .models import Post
 
 # Create your views here.
 def post_list(request):
@@ -32,10 +38,17 @@ def post_detail(request, year, month, day, post):
         publish__month = month,
         publish__day=day
     )
+
+    #list of active comments for this post
+    comments = post.comments.filter(active=True)
+    form = CommentForm()
     return render(
         request,
         'blog/post/detail.html',
-        {'post': post}
+        {'post': post,
+         'comments': comments,
+         'form': form
+         },
     )
 
 class PostListView(ListView):
@@ -47,10 +60,6 @@ class PostListView(ListView):
     paginate_by = 3
     template_name = 'blog/post/list.html'
 
-from .forms import EmailPostForm
-from django.core.mail import send_mail
-
-from .models import Post
 
 def post_share(request, post_id):
     # Retrieve post by id
@@ -86,5 +95,35 @@ def post_share(request, post_id):
             'post': post,
             'form': form,
             'sent': sent
+        }
+    )
+
+@require_POST
+def post_comment(request, post_id):
+    post = get_object_or_404(
+        Post,
+        id=post_id,
+        status=Post.Status.PUBLISHED
+    )
+    comment = None
+    # A comment was posted
+    form = CommentForm(data=request.POST)
+    if form.is_valid():
+        # Create a comment object without saving it to the database
+        comment = form.save(commit=False)
+        # Assign the post to the comment
+        comment.post = post
+        # Save the comment to the database
+        comment.save()
+        # Redirect to the post detail page after posting a comment
+        return HttpResponseRedirect(reverse('blog:post_detail', args=[post.publish.year, post.publish.month, post.publish.day, post.slug]))
+    # If form is not valid, render the post detail page with the form
+    return render(
+        request,
+        'blog/post/detail.html',
+        {
+            'post': post,
+            'form': form,
+            'comment': comment
         }
     )
